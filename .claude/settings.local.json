@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(cmd.exe /c \"npm install\")",
+      "Bash(cmd.exe /c \"npm install 2>&1\")",
+      "Bash(cmd.exe /c \"where npm && npm --version\")",
+      "Bash(cmd.exe:*)",
+      "Bash(tr:*)",
+      "Bash(powershell.exe:*)",
+      "Bash(export PATH=\"/c/Program Files/nodejs:$PATH\")",
+      "Bash(npm run dev:*)",
+      "Bash(git init:*)",
+      "Bash(git -C /c/Users/daled/reelmeme config user.name:*)",
+      "Bash(git -C /c/Users/daled/reelmeme config user.email)",
+      "Bash(git -C /c/Users/daled/reelmeme config --global user.name)",
+      "Bash(git -C /c/Users/daled/reelmeme config:*)",
+      "Bash(winget install:*)",
+      "Bash(export PATH=\"/c/Program Files/GitHub CLI:$PATH\")",
+      "Bash(gh:*)",
+      "Bash(export PATH=\"/c/Program Files/GitHub CLI:/c/Program Files/nodejs:$PATH\")",
+      "Bash(git add:*)"
+    ]
+  }
+}
