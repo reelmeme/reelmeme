@@ -19,7 +19,21 @@
       "Bash(export PATH=\"/c/Program Files/GitHub CLI:$PATH\")",
       "Bash(gh:*)",
       "Bash(export PATH=\"/c/Program Files/GitHub CLI:/c/Program Files/nodejs:$PATH\")",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(npm install:*)",
+      "Bash(\"/c/Program Files/nodejs/npm.cmd\" install:*)",
+      "Bash(export PATH=\"/c/Program Files/nodejs:/c/WINDOWS/system32:/c/WINDOWS:$PATH\")",
+      "Bash(export PATH=\"/c/Program Files/nodejs:/c/WINDOWS/system32:/c/WINDOWS:$APPDATA/npm:$PATH\")",
+      "Bash(vercel whoami:*)",
+      "Bash(npx vercel:*)",
+      "Bash(export PATH=\"/c/Program Files/nodejs:/c/WINDOWS/system32:/c/WINDOWS:/usr/bin:$PATH\")",
+      "Bash(printf:*)",
+      "Bash(npx vite build)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

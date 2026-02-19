@@ -7,6 +7,7 @@ import { fileToBase64, uploadToSupabase } from './services/imageService';
 import { renderMemeToBlob } from './services/memeRenderer';
 import { getStats, incrementStat, pollStats } from './services/statsService';
 import { supabase } from './services/supabase';
+import { fetchCredits, decrementCredits } from './services/creditService';
 import { User } from '@supabase/supabase-js';
 
 const LOGIN_SIGNUP_MEMES: StaticMeme[] = [
@@ -57,9 +58,10 @@ const PRICING_PLANS = [
   },
 ];
 
-const Header = ({ credits, isLoggedIn, onLogout, setView, setShowAuthPopup }: { 
-  credits: number, 
-  isLoggedIn: boolean, 
+const Header = ({ credits, isLoggedIn, isUnlimited, onLogout, setView, setShowAuthPopup }: {
+  credits: number,
+  isLoggedIn: boolean,
+  isUnlimited: boolean,
   onLogout: () => void,
   setView: (view: 'landing' | 'editor' | 'pricing' | 'faq') => void,
   setShowAuthPopup: (show: boolean) => void
@@ -100,7 +102,7 @@ const Header = ({ credits, isLoggedIn, onLogout, setView, setShowAuthPopup }: {
           )}
           {isLoggedIn && (
             <div className="flex items-center gap-1.5 bg-blue-500/10 px-3 py-1.5 rounded-full border border-blue-500/20">
-              <span className="text-blue-400 text-xs font-black">⚡ {credits} CREDITS</span>
+              <span className="text-blue-400 text-xs font-black">⚡ {isUnlimited ? '∞' : credits} CREDITS</span>
             </div>
           )}
           {isLoggedIn && (
@@ -420,8 +422,9 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
+  const [isUnlimited, setIsUnlimited] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [stats, setStats] = useState<SiteStats>(getStats());
+  const [stats, setStats] = useState<SiteStats>({ memesCreated: 0, downloads: 0, creatorsJoined: 0 });
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   
   const [state, setState] = useState<MemeState>({
@@ -438,22 +441,29 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    const loadCredits = async (userId: string, email: string) => {
+      const { credits, is_unlimited } = await fetchCredits(userId, email);
+      setState(prev => ({ ...prev, credits }));
+      setIsUnlimited(is_unlimited);
+    };
+
     // Supabase Auth Listener
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setIsLoggedIn(!!session);
+      if (session?.user) {
+        loadCredits(session.user.id, session.user.email || '');
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setIsLoggedIn(!!session);
+      if (session?.user) {
+        loadCredits(session.user.id, session.user.email || '');
+      }
     });
 
-    const savedCredits = localStorage.getItem('memereel_credits');
-    if (savedCredits !== null) {
-      setState(prev => ({ ...prev, credits: parseInt(savedCredits, 10) }));
-    }
-    
     const stopPolling = pollStats((newStats) => setStats(newStats));
     return () => {
       subscription.unsubscribe();
@@ -472,9 +482,8 @@ export default function App() {
   }, [state.isGenerating]);
 
   useEffect(() => {
-    localStorage.setItem('memereel_credits', state.credits.toString());
     localStorage.setItem('memereel_auth', isLoggedIn.toString());
-  }, [state.credits, isLoggedIn]);
+  }, [isLoggedIn]);
 
   const randomStaticMeme = useMemo(() => {
     return LOGIN_SIGNUP_MEMES[Math.floor(Math.random() * LOGIN_SIGNUP_MEMES.length)];
@@ -521,8 +530,8 @@ export default function App() {
   };
 
   const processInput = async (file?: File) => {
-    if (state.credits <= 0) {
-      setState(prev => ({ ...prev, error: "You’ve used all your free memes 😄 Come back later or upgrade." }));
+    if (state.credits <= 0 && !isUnlimited) {
+      setState(prev => ({ ...prev, error: "You've used all your free memes 😄 Come back later or upgrade." }));
       setView('editor');
       return;
     }
@@ -556,16 +565,22 @@ export default function App() {
         }
       }
 
-      incrementStat('memesCreated');
-      setStats(getStats());
-      
+      await incrementStat('memesCreated');
+      setStats(await getStats());
+
+      // Decrement credits server-side
+      let newCredits = state.credits;
+      if (user) {
+        newCredits = await decrementCredits(user.id);
+      }
+
       setState(prev => ({
         ...prev,
         imageSource: currentImageSource,
         captions,
         songs,
         isGenerating: false,
-        credits: prev.credits - 1 
+        credits: isUnlimited ? prev.credits : newCredits,
       }));
     } catch (err: any) {
       setState(prev => ({ ...prev, isGenerating: false, error: err.message || "Something went wrong." }));
@@ -594,8 +609,8 @@ export default function App() {
       a.href = url;
       a.download = `reelmeme-${state.selectedTone}-${Date.now()}.png`;
       a.click();
-      incrementStat('downloads');
-      setStats(getStats());
+      await incrementStat('downloads');
+      setStats(await getStats());
       return true;
     } catch (err) {
       alert("Failed to download meme.");
@@ -621,8 +636,8 @@ export default function App() {
           title: 'Check out my Reel Meme!',
           text: `Created with Reel Meme 🚀 #reelmeme #meme #reels`,
         });
-        incrementStat('downloads');
-        setStats(getStats());
+        await incrementStat('downloads');
+        setStats(await getStats());
       } else {
         // Fallback: Download and inform
         const success = await handleDownload();
@@ -654,10 +669,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col text-[#E0E0E0]">
-      <Header 
-        credits={state.credits} 
-        isLoggedIn={isLoggedIn} 
-        onLogout={handleLogout} 
+      <Header
+        credits={state.credits}
+        isLoggedIn={isLoggedIn}
+        isUnlimited={isUnlimited}
+        onLogout={handleLogout}
         setView={setView}
         setShowAuthPopup={setShowAuthPopup}
       />
@@ -743,7 +759,7 @@ export default function App() {
                     </p>
                   </div>
                   <p className="text-center text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">
-                    {isLoggedIn ? `Logged in • ${state.credits} credits left` : "Modern humor • Optimized for Reels"}
+                    {isLoggedIn ? `Logged in • ${isUnlimited ? 'Unlimited' : state.credits} credits left` : "Modern humor • Optimized for Reels"}
                   </p>
                 </div>
             </div>
@@ -803,9 +819,9 @@ export default function App() {
                   </p>
                 </div>
               </div>
-            ) : state.error || state.credits <= 0 ? (
+            ) : state.error || (state.credits <= 0 && !isUnlimited) ? (
               <div className="text-center space-y-10 pt-12 bg-white/5 p-8 md:p-12 rounded-[3.5rem] shadow-2xl border border-white/5 animate-in zoom-in-95 duration-500 max-w-2xl mx-auto">
-                {state.credits <= 0 ? (
+                {state.credits <= 0 && !isUnlimited ? (
                   <>
                     <div className="text-8xl animate-bounce">✨</div>
                     <div className="space-y-4">
@@ -944,7 +960,7 @@ export default function App() {
                 </div>
                 <div className="flex justify-between pt-10 border-t border-white/5">
                   <button onClick={handleStartOver} className="text-sm font-bold text-gray-500 hover:text-white transition-colors">← New Photo</button>
-                  <button onClick={() => processInput()} className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-2">{state.credits > 0 ? `Regenerate (1 ⚡) 🔄` : 'Out of credits 💀'}</button>
+                  <button onClick={() => processInput()} className="text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-2">{state.credits > 0 || isUnlimited ? `Regenerate (1 ⚡) 🔄` : 'Out of credits 💀'}</button>
                 </div>
               </>
             )}
