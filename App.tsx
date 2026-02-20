@@ -8,6 +8,8 @@ import { renderMemeToBlob } from './services/memeRenderer';
 import { getStats, incrementStat, pollStats } from './services/statsService';
 import { supabase } from './services/supabase';
 import { fetchCredits, decrementCredits } from './services/creditService';
+import { createSessionId, trackEvent, submitRating, submitFeedback, getUserDownloadCount } from './services/analyticsService';
+import { getAvgRatingPerDay, getPopularTones, getDownloadShareRatio, get7DayRetention, getRecentFeedback } from './services/adminService';
 import { User } from '@supabase/supabase-js';
 
 const LOGIN_SIGNUP_MEMES: StaticMeme[] = [
@@ -58,13 +60,14 @@ const PRICING_PLANS = [
   },
 ];
 
-const Header = ({ credits, isLoggedIn, isUnlimited, onLogout, setView, setShowAuthPopup }: {
+const Header = ({ credits, isLoggedIn, isUnlimited, onLogout, setView, setShowAuthPopup, userEmail }: {
   credits: number,
   isLoggedIn: boolean,
   isUnlimited: boolean,
   onLogout: () => void,
-  setView: (view: 'landing' | 'editor' | 'pricing' | 'faq') => void,
-  setShowAuthPopup: (show: boolean) => void
+  setView: (view: 'landing' | 'editor' | 'pricing' | 'faq' | 'admin') => void,
+  setShowAuthPopup: (show: boolean) => void,
+  userEmail?: string
 }) => {
   const handleCreateClick = () => {
     if (!isLoggedIn) {
@@ -89,6 +92,9 @@ const Header = ({ credits, isLoggedIn, isUnlimited, onLogout, setView, setShowAu
             <button onClick={handleCreateClick} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">Create</button>
             <button onClick={() => setView('pricing')} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">Pricing</button>
             <button onClick={() => setView('faq')} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">FAQ</button>
+            {userEmail === 'reelmeme2026@gmail.com' && (
+              <button onClick={() => setView('admin')} className="text-[10px] font-bold text-blue-400 uppercase tracking-widest hover:text-blue-300 transition-colors">Admin</button>
+            )}
           </nav>
         </div>
         <div className="flex items-center gap-4">
@@ -417,8 +423,244 @@ const Chatbot = ({ setView }: { setView: (view: any) => void }) => {
   );
 };
 
+const RATING_EMOJIS = [
+  { emoji: '💀', label: 'Trash', value: 1 },
+  { emoji: '😐', label: 'Meh', value: 2 },
+  { emoji: '😄', label: 'Good', value: 3 },
+  { emoji: '🔥', label: 'Fire', value: 4 },
+  { emoji: '🤯', label: 'Viral', value: 5 },
+];
+
+const RatingPopup = ({ onSubmit, onSkip }: {
+  onSubmit: (rating: number, wouldPost?: 'yes' | 'maybe' | 'nah') => void,
+  onSkip: () => void
+}) => {
+  const [selectedRating, setSelectedRating] = useState<number | null>(null);
+  const [showWouldPost, setShowWouldPost] = useState(false);
+
+  const handleRating = (value: number) => {
+    setSelectedRating(value);
+    setShowWouldPost(true);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[90] flex items-end justify-center animate-in fade-in duration-200">
+      <div className="bg-[#1A1A2E] w-full max-w-md rounded-t-[3rem] p-8 pb-12 space-y-6 animate-in slide-in-from-bottom-4 duration-300 border-t border-white/10">
+        <div className="text-center space-y-2">
+          <p className="text-2xl font-black text-white">Rate this meme</p>
+          <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">How fire is it?</p>
+        </div>
+        <div className="flex justify-center gap-3">
+          {RATING_EMOJIS.map(({ emoji, label, value }) => (
+            <button
+              key={value}
+              onClick={() => handleRating(value)}
+              className={`flex flex-col items-center gap-1 p-3 rounded-2xl transition-all ${selectedRating === value ? 'bg-white/20 scale-110' : 'hover:bg-white/5'}`}
+            >
+              <span className="text-3xl">{emoji}</span>
+              <span className="text-[9px] font-bold text-gray-500 uppercase">{label}</span>
+            </button>
+          ))}
+        </div>
+        {showWouldPost && (
+          <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <p className="text-center text-xs font-bold text-gray-400">Would you post this?</p>
+            <div className="flex justify-center gap-3">
+              {(['yes', 'maybe', 'nah'] as const).map((option) => (
+                <button
+                  key={option}
+                  onClick={() => onSubmit(selectedRating!, option)}
+                  className="px-5 py-2 bg-white/5 rounded-xl text-sm font-bold text-gray-300 hover:bg-white/10 transition-all capitalize border border-white/5"
+                >
+                  {option === 'yes' ? '✅ Yes' : option === 'maybe' ? '🤔 Maybe' : '😬 Nah'}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="flex justify-center gap-4 pt-2">
+          <button onClick={onSkip} className="text-xs font-bold text-gray-600 uppercase tracking-widest hover:text-gray-400 transition-colors">Skip</button>
+          {showWouldPost && (
+            <button onClick={() => onSubmit(selectedRating!)} className="text-xs font-bold text-blue-400 uppercase tracking-widest hover:text-blue-300 transition-colors">Done</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FEEDBACK_CONFIGS: Record<string, { title: string; subtitle: string; options: string[] }> = {
+  first_download: {
+    title: 'Your first meme! 🎉',
+    subtitle: 'How was the experience?',
+    options: ['Loved it', 'Pretty good', 'Could be better', 'Not great'],
+  },
+  fifth_download: {
+    title: "You're on a roll! 🔥",
+    subtitle: 'How are the memes?',
+    options: ['Amazing', 'Solid', 'Needs work', 'Meh'],
+  },
+  regeneration_frustration: {
+    title: 'Not finding the right vibe? 🤔',
+    subtitle: "What's missing?",
+    options: ['Captions too generic', 'Wrong humor style', 'Need more options', 'Something else'],
+  },
+  abandon: {
+    title: 'What stopped you? 👋',
+    subtitle: 'Quick feedback helps us improve',
+    options: ["Caption wasn't good", 'Image quality', 'Just browsing', 'Other'],
+  },
+};
+
+const FeedbackPopup = ({ triggerType, onSubmit, onSkip }: {
+  triggerType: string,
+  onSubmit: (response: string) => void,
+  onSkip: () => void
+}) => {
+  const config = FEEDBACK_CONFIGS[triggerType];
+  if (!config) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[90] flex items-end justify-center animate-in fade-in duration-200">
+      <div className="bg-[#1A1A2E] w-full max-w-md rounded-t-[3rem] p-8 pb-12 space-y-6 animate-in slide-in-from-bottom-4 duration-300 border-t border-white/10">
+        <div className="text-center space-y-2">
+          <p className="text-2xl font-black text-white">{config.title}</p>
+          <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">{config.subtitle}</p>
+        </div>
+        <div className="space-y-3">
+          {config.options.map((option) => (
+            <button
+              key={option}
+              onClick={() => onSubmit(option)}
+              className="w-full py-4 bg-white/5 rounded-2xl text-sm font-bold text-gray-300 hover:bg-white/10 transition-all border border-white/5 text-left px-6"
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+        <button onClick={onSkip} className="w-full text-xs font-bold text-gray-600 uppercase tracking-widest hover:text-gray-400 transition-colors text-center">Skip</button>
+      </div>
+    </div>
+  );
+};
+
+const AdminDashboard = ({ setView }: { setView: (view: any) => void }) => {
+  const [avgRatings, setAvgRatings] = useState<Array<{ date: string; avg_rating: number; count: number }>>([]);
+  const [tones, setTones] = useState<Array<{ tone: string; count: number }>>([]);
+  const [dlShareRatio, setDlShareRatio] = useState<{ downloads: number; shares: number; ratio: string }>({ downloads: 0, shares: 0, ratio: '0%' });
+  const [retention, setRetention] = useState<{ totalUsers: number; returnedUsers: number; rate: string }>({ totalUsers: 0, returnedUsers: 0, rate: '0%' });
+  const [feedback, setFeedback] = useState<Array<{ trigger_type: string; response: string; created_at: string }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      getAvgRatingPerDay().then(setAvgRatings),
+      getPopularTones().then(setTones),
+      getDownloadShareRatio().then(setDlShareRatio),
+      get7DayRetention().then(setRetention),
+      getRecentFeedback().then(setFeedback),
+    ]).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl w-full py-24 text-center">
+        <div className="text-4xl animate-spin inline-block">⏳</div>
+        <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mt-4">Loading admin data...</p>
+      </div>
+    );
+  }
+
+  const maxToneCount = tones.length > 0 ? tones[0].count : 1;
+  const todayRating = avgRatings.length > 0 ? avgRatings[avgRatings.length - 1] : null;
+
+  return (
+    <div className="max-w-4xl w-full space-y-8 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-black text-white tracking-tight">Admin Dashboard</h2>
+        <button onClick={() => setView('landing')} className="text-sm font-bold text-gray-500 hover:text-white transition-colors">← Back</button>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Top Tone</p>
+          <p className="text-2xl font-black text-white mt-2 capitalize">{tones[0]?.tone || 'N/A'}</p>
+        </div>
+        <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">DL:Share</p>
+          <p className="text-2xl font-black text-white mt-2">{dlShareRatio.ratio}</p>
+          <p className="text-[10px] text-gray-600">{dlShareRatio.downloads}↓ {dlShareRatio.shares}↗</p>
+        </div>
+        <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">7-Day Retention</p>
+          <p className="text-2xl font-black text-white mt-2">{retention.rate}</p>
+          <p className="text-[10px] text-gray-600">{retention.returnedUsers}/{retention.totalUsers} users</p>
+        </div>
+        <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Today's Rating</p>
+          <p className="text-2xl font-black text-white mt-2">{todayRating ? `${todayRating.avg_rating}/5` : 'N/A'}</p>
+          <p className="text-[10px] text-gray-600">{todayRating ? `${todayRating.count} ratings` : 'No data'}</p>
+        </div>
+      </div>
+
+      <div className="bg-white/5 p-8 rounded-3xl border border-white/5 space-y-4">
+        <h3 className="font-black text-white text-lg">Tone Popularity</h3>
+        {tones.map(({ tone, count }) => (
+          <div key={tone} className="flex items-center gap-4">
+            <span className="text-sm font-bold text-gray-400 w-24 capitalize">{tone}</span>
+            <div className="flex-grow bg-white/5 rounded-full h-6 overflow-hidden">
+              <div className="bg-blue-500/40 h-full rounded-full transition-all" style={{ width: `${(count / maxToneCount) * 100}%` }} />
+            </div>
+            <span className="text-xs font-bold text-gray-500 w-12 text-right">{count}</span>
+          </div>
+        ))}
+        {tones.length === 0 && <p className="text-gray-600 text-sm">No tone data yet</p>}
+      </div>
+
+      <div className="bg-white/5 p-8 rounded-3xl border border-white/5 space-y-4">
+        <h3 className="font-black text-white text-lg">Ratings (Last 30 Days)</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-white/5">
+                <th className="text-left py-3">Date</th>
+                <th className="text-right py-3">Avg Rating</th>
+                <th className="text-right py-3">Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              {avgRatings.map(({ date, avg_rating, count }) => (
+                <tr key={date} className="border-b border-white/5">
+                  <td className="py-3 text-gray-400">{date}</td>
+                  <td className="py-3 text-right font-bold text-white">{avg_rating}/5</td>
+                  <td className="py-3 text-right text-gray-500">{count}</td>
+                </tr>
+              ))}
+              {avgRatings.length === 0 && (
+                <tr><td colSpan={3} className="py-6 text-center text-gray-600">No rating data yet</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="bg-white/5 p-8 rounded-3xl border border-white/5 space-y-4">
+        <h3 className="font-black text-white text-lg">Recent Feedback</h3>
+        {feedback.map((fb, i) => (
+          <div key={i} className="flex items-start gap-4 py-3 border-b border-white/5 last:border-0">
+            <span className="text-[9px] font-black bg-blue-500/20 text-blue-400 px-2 py-1 rounded-lg uppercase shrink-0">{fb.trigger_type}</span>
+            <p className="text-sm text-gray-400 flex-grow">{fb.response}</p>
+            <span className="text-[10px] text-gray-600 shrink-0">{new Date(fb.created_at).toLocaleDateString()}</span>
+          </div>
+        ))}
+        {feedback.length === 0 && <p className="text-gray-600 text-sm">No feedback yet</p>}
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
-  const [view, setView] = useState<'landing' | 'editor' | 'pricing' | 'faq' | 'privacy' | 'terms'>('landing');
+  const [view, setView] = useState<'landing' | 'editor' | 'pricing' | 'faq' | 'privacy' | 'terms' | 'admin'>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
@@ -439,6 +681,15 @@ export default function App() {
   
   const [lastUsedFile, setLastUsedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Analytics state
+  const [sessionId, setSessionId] = useState<string>(createSessionId());
+  const [regenerateCount, setRegenerateCount] = useState(0);
+  const [editorStartTime, setEditorStartTime] = useState<number | null>(null);
+  const [showRatingPopup, setShowRatingPopup] = useState(false);
+  const [showFeedbackPopup, setShowFeedbackPopup] = useState<string | null>(null);
+  const [downloadCountThisSession, setDownloadCountThisSession] = useState(0);
+  const [pendingFeedbackTrigger, setPendingFeedbackTrigger] = useState<string | null>(null);
 
   useEffect(() => {
     const loadCredits = async (userId: string, email: string) => {
@@ -485,6 +736,21 @@ export default function App() {
     localStorage.setItem('memereel_auth', isLoggedIn.toString());
   }, [isLoggedIn]);
 
+  // Regeneration frustration trigger (3+ regenerates)
+  useEffect(() => {
+    if (regenerateCount >= 3 && user) {
+      setPendingFeedbackTrigger('regeneration_frustration');
+    }
+  }, [regenerateCount]);
+
+  // Popup priority: feedback shows after rating is dismissed
+  useEffect(() => {
+    if (!showRatingPopup && pendingFeedbackTrigger) {
+      setShowFeedbackPopup(pendingFeedbackTrigger);
+      setPendingFeedbackTrigger(null);
+    }
+  }, [showRatingPopup, pendingFeedbackTrigger]);
+
   const randomStaticMeme = useMemo(() => {
     return LOGIN_SIGNUP_MEMES[Math.floor(Math.random() * LOGIN_SIGNUP_MEMES.length)];
   }, [view, isLoggedIn]);
@@ -494,6 +760,14 @@ export default function App() {
   }, [view]);
 
   const handleStartOver = () => {
+    // Track session end + abandon detection
+    if (user && editorStartTime) {
+      const duration = Date.now() - editorStartTime;
+      trackEvent(user.id, 'session_end', sessionId, undefined, { duration_ms: duration, downloads: downloadCountThisSession });
+      if (downloadCountThisSession === 0) {
+        setPendingFeedbackTrigger('abandon');
+      }
+    }
     setView('landing');
     setLastUsedFile(null);
     setPendingFile(null);
@@ -506,6 +780,11 @@ export default function App() {
       isGenerating: false,
       error: null,
     }));
+    // Reset analytics state for next session
+    setSessionId(createSessionId());
+    setRegenerateCount(0);
+    setEditorStartTime(null);
+    setDownloadCountThisSession(0);
   };
 
   const handleLogin = async () => {
@@ -534,6 +813,21 @@ export default function App() {
       setState(prev => ({ ...prev, error: "You've used all your free memes 😄 Come back later or upgrade." }));
       setView('editor');
       return;
+    }
+
+    // Analytics: track session start for new files, regenerate for existing
+    if (user) {
+      if (file) {
+        const newSessionId = createSessionId();
+        setSessionId(newSessionId);
+        setEditorStartTime(Date.now());
+        setRegenerateCount(0);
+        setDownloadCountThisSession(0);
+        trackEvent(user.id, 'session_start', newSessionId);
+      } else {
+        setRegenerateCount(prev => prev + 1);
+        trackEvent(user.id, 'regenerate', sessionId, state.selectedTone, { regenerate_count: regenerateCount + 1 });
+      }
     }
 
     setState(prev => ({ ...prev, isGenerating: true, error: null }));
@@ -611,6 +905,23 @@ export default function App() {
       a.click();
       await incrementStat('downloads');
       setStats(await getStats());
+
+      // Analytics: track download + show rating popup + smart triggers
+      if (user) {
+        trackEvent(user.id, 'download', sessionId, state.selectedTone);
+        const newCount = downloadCountThisSession + 1;
+        setDownloadCountThisSession(newCount);
+        setShowRatingPopup(true);
+
+        // Smart triggers: 1st or 5th download
+        const totalDownloads = await getUserDownloadCount(user.id);
+        if (totalDownloads === 1) {
+          setPendingFeedbackTrigger('first_download');
+        } else if (totalDownloads === 5) {
+          setPendingFeedbackTrigger('fifth_download');
+        }
+      }
+
       return true;
     } catch (err) {
       alert("Failed to download meme.");
@@ -625,7 +936,7 @@ export default function App() {
   const handleSocialShare = async (platform?: 'instagram' | 'facebook') => {
     if (!state.imageSource || !state.captions) return;
     const caption = state.captions[state.selectedTone];
-    
+
     try {
       const blob = await renderMemeToBlob(state.imageSource, caption);
       const file = new File([blob], `reelmeme-${Date.now()}.png`, { type: 'image/png' });
@@ -638,6 +949,10 @@ export default function App() {
         });
         await incrementStat('downloads');
         setStats(await getStats());
+        // Analytics: track share event
+        if (user) {
+          trackEvent(user.id, 'share', sessionId, state.selectedTone, { platform: platform || 'native_share' });
+        }
       } else {
         // Fallback: Download and inform
         const success = await handleDownload();
@@ -676,6 +991,7 @@ export default function App() {
         onLogout={handleLogout}
         setView={setView}
         setShowAuthPopup={setShowAuthPopup}
+        userEmail={user?.email}
       />
       <main className="flex-grow flex flex-col items-center p-6 md:p-12">
         {view === 'privacy' ? (
@@ -684,6 +1000,8 @@ export default function App() {
           <TermsOfService setView={setView} />
         ) : view === 'faq' ? (
           <FAQSection setView={setView} />
+        ) : view === 'admin' && user?.email === 'reelmeme2026@gmail.com' ? (
+          <AdminDashboard setView={setView} />
         ) : view === 'pricing' ? (
           <div className="max-w-3xl w-full space-y-10 pt-12 animate-in slide-in-from-bottom-8 duration-600">
             <div className="text-center space-y-4">
@@ -903,7 +1221,7 @@ export default function App() {
                 </div>
                 <div className="grid grid-cols-4 bg-white/5 p-2 rounded-[2rem] border border-white/5 shadow-2xl backdrop-blur-md">
                   {Object.values(MemeTone).map((tone) => (
-                    <button key={tone} onClick={() => setState(prev => ({ ...prev, selectedTone: tone }))} className={`py-4 px-2 rounded-2xl text-[10px] md:text-xs font-black capitalize transition-all duration-300 ${state.selectedTone === tone ? 'bg-white text-black shadow-lg scale-105' : 'text-gray-500 hover:text-gray-300'}`}>
+                    <button key={tone} onClick={() => { setState(prev => ({ ...prev, selectedTone: tone })); if (user) trackEvent(user.id, 'tone_select', sessionId, tone); }} className={`py-4 px-2 rounded-2xl text-[10px] md:text-xs font-black capitalize transition-all duration-300 ${state.selectedTone === tone ? 'bg-white text-black shadow-lg scale-105' : 'text-gray-500 hover:text-gray-300'}`}>
                       {tone === MemeTone.FUNNY && '😆 Funny'}{tone === MemeTone.SARCASTIC && '😏 Sarcastic'}{tone === MemeTone.SAVAGE && '🤡 Savage'}{tone === MemeTone.RELATABLE && '🧠 Relatable'}
                     </button>
                   ))}
@@ -967,6 +1285,25 @@ export default function App() {
           </div>
         )}
       </main>
+      {showRatingPopup && (
+        <RatingPopup
+          onSubmit={(rating, wouldPost) => {
+            if (user) submitRating(user.id, rating, state.selectedTone, wouldPost);
+            setShowRatingPopup(false);
+          }}
+          onSkip={() => setShowRatingPopup(false)}
+        />
+      )}
+      {showFeedbackPopup && (
+        <FeedbackPopup
+          triggerType={showFeedbackPopup}
+          onSubmit={(response) => {
+            if (user) submitFeedback(user.id, showFeedbackPopup, response);
+            setShowFeedbackPopup(null);
+          }}
+          onSkip={() => setShowFeedbackPopup(null)}
+        />
+      )}
       <Chatbot setView={setView} />
       <Footer setView={setView} />
     </div>
