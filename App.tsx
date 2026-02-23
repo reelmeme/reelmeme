@@ -13,11 +13,14 @@ import { getAvgRatingPerDay, getPopularTones, getDownloadShareRatio, get7DayRete
 import { User } from '@supabase/supabase-js';
 
 const LOGIN_SIGNUP_MEMES: StaticMeme[] = [
-  { url: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?auto=format&fit=crop&w=800&q=80', topText: 'ME WAITING FOR', bottomText: 'THE LOGIN EMAIL' },
-  { url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80', topText: 'POV: YOU JUST', bottomText: 'SIGNED UP FOR REEL MEME' },
-  { url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=800&q=80', topText: 'REEL CREATORS', bottomText: 'AFTER USING REEL MEME' },
-  { url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80', topText: 'WHEN THE MEME', bottomText: 'ACTUALLY GOES VIRAL' },
-  { url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80', topText: 'FORGETTING PASSWORD', bottomText: 'FOR THE 10TH TIME' },
+  { url: 'https://images.unsplash.com/photo-1543610892-0b1f7e6d8ac1?auto=format&fit=crop&w=800&q=80', topText: 'ME AFTER MAKING', bottomText: 'MY FIRST REEL MEME' },
+  { url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=800&q=80', topText: 'WHEN YOUR MEME', bottomText: 'GETS MORE LIKES THAN YOUR SELFIE' },
+  { url: 'https://images.unsplash.com/photo-1488161628813-04466f0cc7d4?auto=format&fit=crop&w=800&q=80', topText: 'BOSS: WHY ARE YOU LAUGHING', bottomText: 'ME: MAKING MEMES AT WORK' },
+  { url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80', topText: 'TOLD MYSELF JUST ONE MEME', bottomText: '47 MEMES LATER' },
+  { url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80', topText: 'FRIENDS: GO OUTSIDE', bottomText: 'ME: BUT THE MEMES THO' },
+  { url: 'https://images.unsplash.com/photo-1534030347209-467a5b0ad3e6?auto=format&fit=crop&w=800&q=80', topText: 'THAT FACE WHEN', bottomText: 'YOUR MEME GOES VIRAL' },
+  { url: 'https://images.unsplash.com/photo-1496345875659-11f7dd282d1d?auto=format&fit=crop&w=800&q=80', topText: 'ME PRETENDING TO WORK', bottomText: 'ACTUALLY MAKING FIRE MEMES' },
+  { url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80', topText: 'UPLOAD ANY PHOTO', bottomText: 'AI DOES THE REST' },
 ];
 
 const QUALITY_TIPS = [
@@ -1160,7 +1163,7 @@ export default function App() {
                   <p className="text-[#E0E0E0] font-black text-4xl uppercase leading-none tracking-wider drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]" style={{ fontFamily: '"Impact", sans-serif' }}>{randomStaticMeme.bottomText}</p>
                 </div>
               </div>
-              <p className="mt-8 text-xs font-bold text-gray-600 uppercase tracking-[0.3em] animate-pulse">Refresh for vibes 👀</p>
+              <p className="mt-8 text-xs font-bold text-gray-600 uppercase tracking-[0.3em] animate-pulse">Your photo could be next 🔥</p>
             </div>
             {showAuthPopup && (
               <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
