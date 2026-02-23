@@ -153,7 +153,7 @@ const Footer = ({ setView }: { setView: (view: any) => void }) => (
     <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
       <div className="flex items-center gap-2">
         <span className="bg-white text-black px-2 py-0.5 rounded text-xs font-black">REEL</span>
-        <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">MEME © 2024</span>
+        <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">MEME © 2026 All Rights Reserved</span>
       </div>
       <div className="flex gap-8">
         <button onClick={() => setView('faq')} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">FAQ</button>
