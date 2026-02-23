@@ -763,7 +763,10 @@ export default function App() {
   const [pendingFeedbackTrigger, setPendingFeedbackTrigger] = useState<string | null>(null);
 
   // Plan click tracking
-  const [pendingPlan, setPendingPlan] = useState<string | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<string | null>(() => {
+    const saved = localStorage.getItem('reelmeme_pending_plan');
+    return saved || null;
+  });
   const [showTrafficPopup, setShowTrafficPopup] = useState(false);
   const [selectedPlanName, setSelectedPlanName] = useState<string>('');
 
@@ -1061,30 +1064,33 @@ export default function App() {
   const handlePlanClick = async (planName: string) => {
     if (!isLoggedIn) {
       setPendingPlan(planName);
+      localStorage.setItem('reelmeme_pending_plan', planName);
       setShowAuthPopup(true);
       return;
     }
+    // Clear any saved pending plan
+    setPendingPlan(null);
+    localStorage.removeItem('reelmeme_pending_plan');
     setSelectedPlanName(planName);
-    try {
-      if (user) {
-        await supabase.from('plan_clicks').insert({
-          user_id: user.id,
-          email: user.email,
-          plan_name: planName,
-          clicked_at: new Date().toISOString(),
-        });
-      }
-    } catch (err) {
-      console.error('Failed to track plan click:', err);
+    // Track in Supabase (fire and forget)
+    if (user) {
+      supabase.from('plan_clicks').insert({
+        user_id: user.id,
+        email: user.email,
+        plan_name: planName,
+        clicked_at: new Date().toISOString(),
+      }).then(() => {});
     }
     setShowTrafficPopup(true);
   };
 
-  // After login, if user had clicked a plan, process it
+  // After login (including OAuth redirect), if user had clicked a plan, process it
   useEffect(() => {
     if (isLoggedIn && pendingPlan) {
-      handlePlanClick(pendingPlan);
+      const plan = pendingPlan;
       setPendingPlan(null);
+      localStorage.removeItem('reelmeme_pending_plan');
+      handlePlanClick(plan);
     }
   }, [isLoggedIn, pendingPlan]);
 
