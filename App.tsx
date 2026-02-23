@@ -762,6 +762,11 @@ export default function App() {
   const [downloadCountThisSession, setDownloadCountThisSession] = useState(0);
   const [pendingFeedbackTrigger, setPendingFeedbackTrigger] = useState<string | null>(null);
 
+  // Plan click tracking
+  const [pendingPlan, setPendingPlan] = useState<string | null>(null);
+  const [showTrafficPopup, setShowTrafficPopup] = useState(false);
+  const [selectedPlanName, setSelectedPlanName] = useState<string>('');
+
   useEffect(() => {
     const loadCredits = async (userId: string, email: string) => {
       const { credits, is_unlimited } = await fetchCredits(userId, email);
@@ -1053,6 +1058,36 @@ export default function App() {
     }
   };
 
+  const handlePlanClick = async (planName: string) => {
+    if (!isLoggedIn) {
+      setPendingPlan(planName);
+      setShowAuthPopup(true);
+      return;
+    }
+    setSelectedPlanName(planName);
+    try {
+      if (user) {
+        await supabase.from('plan_clicks').insert({
+          user_id: user.id,
+          email: user.email,
+          plan_name: planName,
+          clicked_at: new Date().toISOString(),
+        });
+      }
+    } catch (err) {
+      console.error('Failed to track plan click:', err);
+    }
+    setShowTrafficPopup(true);
+  };
+
+  // After login, if user had clicked a plan, process it
+  useEffect(() => {
+    if (isLoggedIn && pendingPlan) {
+      handlePlanClick(pendingPlan);
+      setPendingPlan(null);
+    }
+  }, [isLoggedIn, pendingPlan]);
+
   return (
     <div className="min-h-screen flex flex-col text-[#E0E0E0]">
       <Header
@@ -1097,7 +1132,7 @@ export default function App() {
                       <p className="text-3xl font-black text-white">{plan.price}</p>
                       <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{plan.period === 'one-time' ? 'once' : `/ ${plan.period}`}</p>
                     </div>
-                    <button className="px-8 py-4 bg-white text-black rounded-2xl font-black text-sm hover:scale-105 active:scale-95 transition-all shadow-lg">
+                    <button onClick={() => handlePlanClick(plan.name)} className="px-8 py-4 bg-white text-black rounded-2xl font-black text-sm hover:scale-105 active:scale-95 transition-all shadow-lg">
                       Get Started
                     </button>
                   </div>
@@ -1107,7 +1142,7 @@ export default function App() {
             <div className="text-center space-y-6 pt-4">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-[0.2em]">Unlimited memes • Better flow • No interruptions</p>
               <div className="flex flex-col gap-4">
-                <button className="w-full py-6 bg-white text-black rounded-[2.2rem] font-black text-xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all">Get Started</button>
+                <button onClick={() => handlePlanClick('Pro Unlimited')} className="w-full py-6 bg-white text-black rounded-[2.2rem] font-black text-xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all">Get Started</button>
                 <div className="flex justify-center gap-4 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
                   <button onClick={() => setView('privacy')} className="hover:text-white transition-colors">Privacy</button>
                   <span>•</span>
@@ -1239,7 +1274,7 @@ export default function App() {
                               <p className="text-xl font-black text-white">{plan.price}</p>
                               <p className="text-[9px] text-gray-600 font-bold uppercase">{plan.period === 'one-time' ? 'once' : `/ ${plan.period}`}</p>
                             </div>
-                            <button className="px-5 py-2.5 bg-white/10 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white hover:text-black transition-all">
+                            <button onClick={() => handlePlanClick(plan.name)} className="px-5 py-2.5 bg-white/10 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white hover:text-black transition-all">
                               Select
                             </button>
                           </div>
@@ -1250,7 +1285,7 @@ export default function App() {
                     <div className="space-y-6 pt-4">
                       <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Unlimited memes • Better flow • No interruptions</p>
                       <div className="flex flex-col gap-3">
-                        <button className="w-full py-6 bg-blue-500 text-white rounded-[2rem] font-black text-xl shadow-[0_10px_40px_rgba(59,130,246,0.3)] hover:scale-[1.02] active:scale-95 transition-all">
+                        <button onClick={() => handlePlanClick('Pro Unlimited')} className="w-full py-6 bg-blue-500 text-white rounded-[2rem] font-black text-xl shadow-[0_10px_40px_rgba(59,130,246,0.3)] hover:scale-[1.02] active:scale-95 transition-all">
                           Get more memes
                         </button>
                         <button onClick={() => setView('pricing')} className="w-full py-4 text-gray-400 hover:text-white font-bold text-sm transition-colors">
@@ -1376,6 +1411,34 @@ export default function App() {
           }}
           onSkip={() => setShowFeedbackPopup(null)}
         />
+      )}
+      {showTrafficPopup && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[90] flex items-center justify-center p-6 animate-in fade-in duration-200">
+          <div className="bg-[#1A1A2E] max-w-md w-full rounded-[3rem] p-10 shadow-[0_0_80px_rgba(0,0,0,0.7)] border border-white/10 space-y-8 animate-in zoom-in-95 duration-300 text-center">
+            <div className="text-7xl">🔥</div>
+            <div className="space-y-3">
+              <h3 className="text-2xl font-black text-white tracking-tight">We're experiencing high demand!</h3>
+              <p className="text-gray-400 font-medium leading-relaxed">
+                Thanks for choosing <span className="text-blue-400 font-bold">{selectedPlanName}</span>! Due to overwhelming traffic, payments are temporarily delayed.
+              </p>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                We're working hard to get this sorted. You'll be among the first to know when it's ready.
+              </p>
+            </div>
+            <div className="bg-white/5 p-5 rounded-2xl border border-white/5 space-y-2">
+              <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">Your selection has been saved</p>
+              <p className="text-xs text-gray-500">We'll notify you at <span className="text-white font-bold">{user?.email}</span> when payments go live.</p>
+            </div>
+            <div className="space-y-3">
+              <button onClick={() => { setShowTrafficPopup(false); setView('landing'); }} className="w-full py-5 bg-white text-black rounded-[2rem] font-black text-lg hover:scale-[1.02] active:scale-95 transition-all shadow-lg">
+                Keep Making Memes
+              </button>
+              <button onClick={() => setShowTrafficPopup(false)} className="w-full text-xs font-bold text-gray-600 uppercase tracking-widest hover:text-gray-400 transition-colors">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       <Chatbot setView={setView} />
       <Footer setView={setView} />
