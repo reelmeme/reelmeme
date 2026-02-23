@@ -1207,32 +1207,6 @@ export default function App() {
               </div>
               <p className="mt-8 text-xs font-bold text-gray-600 uppercase tracking-[0.3em] animate-pulse">Your photo could be next 🔥</p>
             </div>
-            {showAuthPopup && (
-              <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                <div className="bg-[#1A1A2E] max-w-md w-full rounded-[3.5rem] p-12 shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/5 space-y-10 animate-in zoom-in-95 duration-300">
-                  <div className="text-center space-y-3">
-                    <div className="text-7xl mb-6 drop-shadow-lg">🙌</div>
-                    <h3 className="text-3xl font-black tracking-tight text-white">Almost there!</h3>
-                    <p className="text-gray-400 font-medium italic">Your image is ready to be memed.</p>
-                  </div>
-                  <div className="space-y-4">
-                    <button onClick={handleLogin} className="w-full py-6 bg-white text-black rounded-[2rem] font-black text-xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4">
-                      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="G" />
-                      Sign up with Google
-                    </button>
-                    <div className="text-center space-y-3">
-                      <button onClick={handleLogin} className="w-full text-gray-500 hover:text-white font-bold text-sm transition-colors">I already have an account</button>
-                      <div className="flex justify-center gap-3 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
-                        <button onClick={() => { setView('privacy'); setShowAuthPopup(false); }} className="hover:text-white transition-colors">Privacy Policy</button>
-                        <span>•</span>
-                        <button onClick={() => { setView('terms'); setShowAuthPopup(false); }} className="hover:text-white transition-colors">Terms of Service</button>
-                      </div>
-                    </div>
-                  </div>
-                  <button onClick={() => setShowAuthPopup(false)} className="w-full text-xs font-bold text-gray-600 uppercase tracking-widest">Cancel upload</button>
-                </div>
-              </div>
-            )}
           </div>
         ) : (
           <div className="max-w-md w-full space-y-8 animate-in slide-in-from-bottom-8 duration-600 pb-24">
@@ -1443,6 +1417,32 @@ export default function App() {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {showAuthPopup && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[100] flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="bg-[#1A1A2E] max-w-md w-full rounded-[3.5rem] p-12 shadow-[0_0_100px_rgba(0,0,0,0.8)] border border-white/5 space-y-10 animate-in zoom-in-95 duration-300">
+            <div className="text-center space-y-3">
+              <div className="text-7xl mb-6 drop-shadow-lg">🙌</div>
+              <h3 className="text-3xl font-black tracking-tight text-white">Almost there!</h3>
+              <p className="text-gray-400 font-medium italic">Sign up to continue.</p>
+            </div>
+            <div className="space-y-4">
+              <button onClick={handleLogin} className="w-full py-6 bg-white text-black rounded-[2rem] font-black text-xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="G" />
+                Sign up with Google
+              </button>
+              <div className="text-center space-y-3">
+                <button onClick={handleLogin} className="w-full text-gray-500 hover:text-white font-bold text-sm transition-colors">I already have an account</button>
+                <div className="flex justify-center gap-3 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
+                  <button onClick={() => { setView('privacy'); setShowAuthPopup(false); }} className="hover:text-white transition-colors">Privacy Policy</button>
+                  <span>•</span>
+                  <button onClick={() => { setView('terms'); setShowAuthPopup(false); }} className="hover:text-white transition-colors">Terms of Service</button>
+                </div>
+              </div>
+            </div>
+            <button onClick={() => setShowAuthPopup(false)} className="w-full text-xs font-bold text-gray-600 uppercase tracking-widest">Cancel</button>
           </div>
         </div>
       )}
