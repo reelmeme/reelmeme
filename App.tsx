@@ -65,7 +65,7 @@ const Header = ({ credits, isLoggedIn, isUnlimited, onLogout, setView, setShowAu
   isLoggedIn: boolean,
   isUnlimited: boolean,
   onLogout: () => void,
-  setView: (view: 'landing' | 'editor' | 'pricing' | 'faq' | 'admin') => void,
+  setView: (view: 'landing' | 'editor' | 'pricing' | 'faq' | 'about' | 'admin') => void,
   setShowAuthPopup: (show: boolean) => void,
   userEmail?: string
 }) => {
@@ -92,6 +92,7 @@ const Header = ({ credits, isLoggedIn, isUnlimited, onLogout, setView, setShowAu
             <button onClick={handleCreateClick} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">Create</button>
             <button onClick={() => setView('pricing')} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">Pricing</button>
             <button onClick={() => setView('faq')} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">FAQ</button>
+            <button onClick={() => setView('about')} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">About</button>
             {userEmail === 'reelmeme2026@gmail.com' && (
               <button onClick={() => setView('admin')} className="text-[10px] font-bold text-blue-400 uppercase tracking-widest hover:text-blue-300 transition-colors">Admin</button>
             )}
@@ -152,6 +153,7 @@ const Footer = ({ setView }: { setView: (view: any) => void }) => (
       </div>
       <div className="flex gap-8">
         <button onClick={() => setView('faq')} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">FAQ</button>
+        <button onClick={() => setView('about')} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">About</button>
         <a href="mailto:reelmeme2026@gmail.com" className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">Contact</a>
         <button onClick={() => setView('privacy')} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">Privacy</button>
         <button onClick={() => setView('terms')} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">Terms</button>
@@ -317,6 +319,71 @@ const TermsOfService = ({ setView }: { setView: (view: any) => void }) => (
     </div>
     <div className="text-center">
       <button onClick={() => setView('landing')} className="text-sm font-bold text-gray-500 hover:text-white transition-colors">← Back Home</button>
+    </div>
+  </div>
+);
+
+const AboutPage = ({ setView }: { setView: (view: any) => void }) => (
+  <div className="max-w-3xl w-full space-y-10 py-12 animate-in fade-in slide-in-from-bottom-4 duration-700 text-gray-400">
+    <div className="text-center space-y-4">
+      <h2 className="text-5xl font-black text-white tracking-tighter">About ReelMeme</h2>
+      <p className="font-bold uppercase tracking-widest text-xs text-blue-500">AI-Powered Memes for Reels</p>
+    </div>
+    <div className="bg-white/5 p-8 md:p-12 rounded-[3rem] border border-white/5 space-y-8 leading-relaxed">
+      <section className="space-y-4">
+        <h3 className="text-xl font-black text-white">What is ReelMeme?</h3>
+        <p>ReelMeme is an AI-powered meme creator built for the short-video era. Upload any photo and our AI instantly generates viral-ready vertical memes optimized for Instagram Reels and Facebook Reels — complete with captions and trending audio suggestions.</p>
+      </section>
+      <section className="space-y-4">
+        <h3 className="text-xl font-black text-white">How it works</h3>
+        <div className="grid gap-4">
+          <div className="flex items-start gap-4">
+            <span className="text-2xl shrink-0">📸</span>
+            <div>
+              <p className="font-bold text-white">1. Upload a photo</p>
+              <p>Drop in any image — selfies, pets, food, anything.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-4">
+            <span className="text-2xl shrink-0">🤖</span>
+            <div>
+              <p className="font-bold text-white">2. AI does the magic</p>
+              <p>Our AI analyzes your photo and generates 4 caption styles: Funny, Sarcastic, Savage, and Relatable — plus a trending song suggestion for each.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-4">
+            <span className="text-2xl shrink-0">🎬</span>
+            <div>
+              <p className="font-bold text-white">3. Download & share</p>
+              <p>Get a perfectly rendered 1080x1920 meme ready for Reels. Share directly to Instagram or Facebook in one tap.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section className="space-y-4">
+        <h3 className="text-xl font-black text-white">Why ReelMeme?</h3>
+        <ul className="list-disc pl-5 space-y-2">
+          <li><span className="font-bold text-white">Reel-ready format</span> — Every meme is 9:16 vertical, perfectly sized for Instagram and Facebook Reels</li>
+          <li><span className="font-bold text-white">AI-powered captions</span> — No more staring at a blank screen. Get Gen-Z humor that actually hits</li>
+          <li><span className="font-bold text-white">Trending audio</span> — Each meme comes with a song suggestion to maximize engagement</li>
+          <li><span className="font-bold text-white">4 vibes, 1 photo</span> — Pick the tone that matches your mood: funny, sarcastic, savage, or relatable</li>
+          <li><span className="font-bold text-white">Fast & simple</span> — Upload, generate, download. No design skills needed</li>
+        </ul>
+      </section>
+      <section className="space-y-4">
+        <h3 className="text-xl font-black text-white">Our mission</h3>
+        <p>We believe everyone deserves to go viral. ReelMeme makes it effortless to create scroll-stopping content — whether you're a content creator, a brand, or just someone who wants to make their friends laugh.</p>
+      </section>
+      <section className="space-y-4">
+        <h3 className="text-xl font-black text-white">Get in touch</h3>
+        <p>Have questions, feedback, or just want to say hi? Reach out at <a href="mailto:reelmeme2026@gmail.com" className="text-blue-400 font-bold">reelmeme2026@gmail.com</a></p>
+      </section>
+    </div>
+    <div className="text-center space-y-4">
+      <button onClick={() => setView('landing')} className="py-5 px-12 bg-white text-black rounded-full font-black text-lg hover:scale-105 transition-transform shadow-xl">Start Creating</button>
+      <div className="block">
+        <button onClick={() => setView('landing')} className="text-sm font-bold text-gray-500 hover:text-white transition-colors">← Back Home</button>
+      </div>
     </div>
   </div>
 );
@@ -660,7 +727,7 @@ const AdminDashboard = ({ setView }: { setView: (view: any) => void }) => {
 };
 
 export default function App() {
-  const [view, setView] = useState<'landing' | 'editor' | 'pricing' | 'faq' | 'privacy' | 'terms' | 'admin'>('landing');
+  const [view, setView] = useState<'landing' | 'editor' | 'pricing' | 'faq' | 'privacy' | 'terms' | 'about' | 'admin'>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showAuthPopup, setShowAuthPopup] = useState(false);
@@ -996,6 +1063,8 @@ export default function App() {
       <main className="flex-grow flex flex-col items-center p-6 md:p-12">
         {view === 'privacy' ? (
           <PrivacyPolicy setView={setView} />
+        ) : view === 'about' ? (
+          <AboutPage setView={setView} />
         ) : view === 'terms' ? (
           <TermsOfService setView={setView} />
         ) : view === 'faq' ? (
