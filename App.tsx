@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Instagram, Facebook, Share2, Download, Sparkles } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 import { MemeTone, MemeState, StaticMeme, SiteStats } from './types';
 import { generateMemeData } from './services/gemini';
 import { fileToBase64, uploadToSupabase } from './services/imageService';
@@ -1378,6 +1379,7 @@ export default function App() {
       )}
       <Chatbot setView={setView} />
       <Footer setView={setView} />
+      <Analytics />
     </div>
   );
 }
