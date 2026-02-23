@@ -154,7 +154,7 @@ const Footer = ({ setView }: { setView: (view: any) => void }) => (
       <div className="flex gap-8">
         <button onClick={() => setView('faq')} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">FAQ</button>
         <button onClick={() => setView('about')} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">About</button>
-        <a href="mailto:reelmeme2026@gmail.com" className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">Contact</a>
+        <a href="mailto:support@reelmeme.com" className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">Contact</a>
         <button onClick={() => setView('privacy')} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">Privacy</button>
         <button onClick={() => setView('terms')} className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">Terms</button>
         <a href="#" className="text-[10px] font-bold text-gray-500 uppercase tracking-widest hover:text-white transition-colors">API</a>
@@ -228,7 +228,7 @@ const PrivacyPolicy = ({ setView }: { setView: (view: any) => void }) => (
       <section className="space-y-4">
         <h3 className="text-xl font-black text-white">7. Your control</h3>
         <p>You can stop using ReelMeme anytime, cancel subscriptions anytime, or contact us for questions.</p>
-        <p>Support: <a href="mailto:reelmeme2026@gmail.com" className="text-blue-400 font-bold">reelmeme2026@gmail.com</a></p>
+        <p>Support: <a href="mailto:support@reelmeme.com" className="text-blue-400 font-bold">support@reelmeme.com</a></p>
       </section>
       <section className="space-y-4">
         <h3 className="text-xl font-black text-white">8. Changes to this policy</h3>
@@ -236,7 +236,7 @@ const PrivacyPolicy = ({ setView }: { setView: (view: any) => void }) => (
       </section>
       <section className="space-y-4">
         <h3 className="text-xl font-black text-white">9. Contact</h3>
-        <p>Questions about privacy? <a href="mailto:reelmeme2026@gmail.com" className="text-blue-400 font-bold">reelmeme2026@gmail.com</a></p>
+        <p>Questions about privacy? <a href="mailto:support@reelmeme.com" className="text-blue-400 font-bold">support@reelmeme.com</a></p>
       </section>
     </div>
     <div className="text-center">
@@ -314,7 +314,7 @@ const TermsOfService = ({ setView }: { setView: (view: any) => void }) => (
       </section>
       <section className="space-y-4">
         <h3 className="text-xl font-black text-white">11. Contact</h3>
-        <p>Questions about terms or billing? <a href="mailto:reelmeme2026@gmail.com" className="text-blue-400 font-bold">reelmeme2026@gmail.com</a></p>
+        <p>Questions about terms or billing? <a href="mailto:support@reelmeme.com" className="text-blue-400 font-bold">support@reelmeme.com</a></p>
       </section>
     </div>
     <div className="text-center">
@@ -376,7 +376,7 @@ const AboutPage = ({ setView }: { setView: (view: any) => void }) => (
       </section>
       <section className="space-y-4">
         <h3 className="text-xl font-black text-white">Get in touch</h3>
-        <p>Have questions, feedback, or just want to say hi? Reach out at <a href="mailto:reelmeme2026@gmail.com" className="text-blue-400 font-bold">reelmeme2026@gmail.com</a></p>
+        <p>Have questions, feedback, or just want to say hi? Reach out at <a href="mailto:support@reelmeme.com" className="text-blue-400 font-bold">support@reelmeme.com</a></p>
       </section>
     </div>
     <div className="text-center space-y-4">
@@ -400,7 +400,7 @@ const FAQSection = ({ setView }: { setView: (view: any) => void }) => {
     { q: "Can I cancel Pro anytime?", a: "Of course. No strings attached. You can cancel your subscription with one click." },
     { q: "Is my image stored?", a: "We only process your image to generate the meme. We don't store your personal photos on our servers long-term." },
     { q: "Is payment secure?", a: "100%. We use industry-standard encrypted payment processing to keep your data safe." },
-    { q: "Still need help?", a: "We've got you! Reach out to us at reelmeme2026@gmail.com and we'll get back to you as soon as possible." }
+    { q: "Still need help?", a: "We've got you! Reach out to us at support@reelmeme.com and we'll get back to you as soon as possible." }
   ];
 
   return (
@@ -437,7 +437,7 @@ const Chatbot = ({ setView }: { setView: (view: any) => void }) => {
     { label: "Pricing & Credits", action: () => setView('pricing') },
     { label: "Image Tips", action: () => addMessage("Any tips for photos?", "Clear lighting and centered subjects work best. The AI loves high-contrast shots!") },
     { label: "Sharing to Reels", action: () => addMessage("How do I post?", "Download the meme, then open Instagram or Facebook and upload it as a Reel. It's already sized perfectly!") },
-    { label: "Contact Support", action: () => addMessage("How can I contact support?", "Need more help? We’ve got you 👇\n\nEmail: reelmeme2026@gmail.com") },
+    { label: "Contact Support", action: () => addMessage("How can I contact support?", "Need more help? We’ve got you 👇\n\nEmail: support@reelmeme.com") },
     { label: "View FAQ", action: () => setView('faq') }
   ];
 
